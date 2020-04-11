@@ -1,7 +1,7 @@
 #Import libraries
 import xlwt
 from getLandmarks import *
-
+from distanceCalculation import *
 def landmarks():
     book = xlwt.Workbook()
     sheet1 = book.add_sheet('sheet1')
@@ -18,3 +18,4 @@ def landmarks():
         sheet1.write(i, 1, e)
     name = "random1.xls"
     book.save(name)
+    return distance()

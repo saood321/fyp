@@ -1,2 +1,4 @@
 import Signin
-Signin.call()
+def call():
+    Signin.call()
+call()

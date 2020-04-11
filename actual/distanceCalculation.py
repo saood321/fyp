@@ -33,4 +33,5 @@ def distance():
 
     name = "random3.xls"
     book.save(name)
-    predict()
+    mood=predict()
+    return mood

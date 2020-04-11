@@ -22,8 +22,8 @@ def crop(image):
 
         img = cv2.imread(img)
         cv2.imwrite('faces_detected.jpg', image)
-        resize(img)
-        return 1
+        return resize(img)
+
 
     else:
         return 0

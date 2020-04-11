@@ -3,7 +3,6 @@ import cv2
 from cropImage import *
 
 def camera():
-    print("Hello camera")
     # capture from camera at location 0
     cap = cv2.VideoCapture(0)
     # set the width and height, and UNSUCCESSFULLY set the exposure time
@@ -26,10 +25,13 @@ def camera():
 
         cv2.imshow('Image', image)
         if(cv2.waitKey(1) & 0xFF == ord('n')):
-            return cap,crop(frame)
-            break
-        if (cv2.waitKey(2) & 0xFF == ord('q')):
-            break
+            cap.release()
+            cv2.destroyAllWindows()
+            return crop(frame)
 
-    cap.release()
-    cv2.destroyAllWindows()
+        if (cv2.waitKey(2) & 0xFF == ord('q')):
+            cap.release()
+            cv2.destroyAllWindows()
+            return None
+
+
