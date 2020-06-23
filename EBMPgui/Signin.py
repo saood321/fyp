@@ -5,6 +5,13 @@ from tkinter import*
 from tkinter import messagebox
 import WindowInitializing
 
+
+class Geek:
+    def getVal(self):
+        return name
+
+
+
 def change(root):
     root.destroy()
     Signup.Call(root)
@@ -12,8 +19,9 @@ def change(root):
 def change_case(event=None):
     messagebox.showerror("Error", "Enter Valid Data")
 
-
+global name
 def login(root, username, password):
+    global name
     name=username.get()
     myresult=Database.verifyUser(username,password)
 
@@ -22,7 +30,8 @@ def login(root, username, password):
         Homepage.homepage1(name)
     else:
         messagebox.showerror("Error","Enter Valid Data")
-
+def name():
+    return name
 def Start(root):
     username = StringVar()
     password = StringVar()

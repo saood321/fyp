@@ -1,12 +1,6 @@
-from tkinter import*
-
-from PyQt5.QtCore import left
-from pygame import surface
-
+from tkinter import *
 import Signin
 import Upgrade
-import cv2
-import matplotlib.pyplot as plt
 import WindowInitializing
 import pygame
 import sys
@@ -29,7 +23,9 @@ def stop1():
 def music_forward(event=None):
     print(val)
 
-
+def history():
+    import MusicPlayer
+    MusicPlayer.call("Happy")
 
 
 def homepage1(name):
@@ -41,7 +37,7 @@ def homepage1(name):
     upgrade_frame = Frame(root, bg="white")
     upgrade_frame.place(x=100, y=130)
     btn_upgradeProfile = Button(upgrade_frame,width=15,height=2,font=("times new roman", 20, "bold"), text="Upgrade Profile", command=lambda :upgradedata(root,name), bg="black", fg="white").grid(row=0, column=0)
-    btn_history = Button(upgrade_frame,width=15,height=2,font=("times new roman", 20, "bold"), text="History",  bg="black", fg="white").grid(row=0, column=2)
+    btn_history = Button(upgrade_frame,width=15,height=2,font=("times new roman", 20, "bold"),command=history, text="History",  bg="black", fg="white").grid(row=0, column=2)
     btn_logout = Button(upgrade_frame,width=15,height=2,font=("times new roman", 20, "bold"), text="Logout" ,command=lambda :logout(root),  bg="black", fg="white").grid(row=0, column=3)
 
     login_frame = Frame(root, bg="white")
@@ -73,6 +69,8 @@ def camera():
     with add_path(r'C:\Users\M.Saood Sarwar\PycharmProjects\fyp\actual'):
         mod = __import__('mainstart')
     del sys.modules['mainstart']
+
+
 
 
 

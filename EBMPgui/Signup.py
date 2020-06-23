@@ -49,7 +49,7 @@ def login(root, username, password,email):
         var=Database.insertuser(username,email,password)
         if var == 1:
             root.destroy()
-            Homepage.homepage1(name)
+            Signin.call()
         else:
             messagebox.showerror("Error", var)
 
