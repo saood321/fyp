@@ -6,22 +6,178 @@ import os
 from mutagen.mp3 import MP3
 import time
 import threading
+import mysql.connector
+import mysql
+import actual.DataBaseConnect
+from tkinter.messagebox import *
 
-root = Tk()
-
-root.title("EBMP")
-#root.iconbitmap(r'images/melody.ico')
-
-menuBar = Menu(root)
-root.config(menu=menuBar)
-
-statusBar = Label(root, text="Welcome to EBMP", relief=SUNKEN, anchor=W)
-statusBar.pack(side=BOTTOM, fill=X)
-
+global textMusicCurrent
+global textMusicLength
 playlist = []
+global playlistBox
+global statusBar
+global btnMute
+global imageVolume
+global scaleVolume
+global imageMute
+global path
+global music_selected
+global myresult
 
-def check(str):
-    print(str)
+
+
+
+
+def database(mood):
+    global myresult
+    if mood=="Happy":
+        type=1
+        mydb,mycursor=actual.DataBaseConnect.database()
+
+    sql = ("""SELECT SongId FROM history """)
+    mycursor.execute(sql)
+    myresult = mycursor.fetchall()
+
+    return myresult
+
+
+
+def select_music(root):
+    global music_selected
+    global path
+    music_selected = playlistBox.curselection()
+    music_selected = int(music_selected[0])
+    music_play_path = playlist[music_selected]
+    print(music_play_path)
+
+    mydb, mycursor = actual.DataBaseConnect.database()
+    sql = ("""SELECT SongUrl FROM song WHERE SongName='%s' """ % (music_play_path))
+    mycursor.execute(sql)
+    url = mycursor.fetchall()
+    path2=url[0][0]+".mp3"
+
+    mixer.music.load(path2)
+    time.sleep(1)
+    mixer.music.play()
+    statusBar['text'] = "Playing - " + os.path.basename(url[0][0])
+    show_details(path2)
+
+def fill(myresult2,playlistBox,playlist):
+
+    k = 0
+
+    length = len(myresult2)
+    while k<length:
+        playlistBox.insert(k, myresult2[k][1])
+        playlist.insert(k, myresult2[k][1])
+        k=k+1
+    return playlistBox,playlist
+
+global var
+global myresult1
+def main(mood):
+    global myresult1
+    myresult=database(mood)
+    mydb, mycursor = actual.DataBaseConnect.database()
+    count = 0
+    myresult2 = []
+    for i in myresult:
+        sql = ("""SELECT SongUrl,SongName FROM Song WHERE SongId='%s' """ % (myresult[count][0]))
+        mycursor.execute(sql)
+        myresult1 = mycursor.fetchall()
+        count = count + 1
+        myresult2.append(myresult1[0])
+
+
+    root = Tk()
+    root.geometry("1000x700")
+    root.title("EBMP")
+    root.iconbitmap(r'images/melody.ico')
+
+    menuBar = Menu(root)
+    root.config(menu=menuBar)
+
+    global statusBar
+    statusBar = Label(root, text="Welcome to EBMP", relief=SUNKEN, anchor=W)
+    statusBar.pack(side=BOTTOM, fill=X)
+
+    subMenu = Menu(menuBar, tearoff=0)
+    menuBar.add_cascade(label="File", menu=subMenu)
+
+    subMenu.add_command(label="Exit", command=root.destroy)
+
+    subMenu = Menu(menuBar, tearoff=0)
+    menuBar.add_cascade(label="Help", menu=subMenu)
+    subMenu.add_command(label="About", command=submenu_about)
+
+    mixer.init()
+
+    frameLeft = Frame(root)
+    frameLeft.pack(side=LEFT, padx=10,pady=80)
+    global playlistBox
+    playlistBox = Listbox(frameLeft, relief=RAISED,width=60)
+    playlistBox.pack()
+    fill(myresult2, playlistBox, playlist)
+
+
+    frameRight = Frame(root)
+    frameRight.pack()
+
+    frameTop = Frame(frameRight)
+    frameTop.pack()
+
+    textWelcome = Label(frameTop, text="Welcome to EBMP")
+    textWelcome.pack(pady=5)
+
+    global textMusicLength
+    textMusicLength = Label(frameTop, text="Total Length: --:--")
+    textMusicLength.pack()
+
+    global textMusicCurrent
+    textMusicCurrent = Label(frameTop, text="Current Time: --:--", relief=GROOVE)
+    textMusicCurrent.pack(pady=5)
+
+    frameMiddle = Frame(frameRight)
+    frameMiddle.pack(padx=30, pady=30)
+
+    imagePlay = PhotoImage(file=r'images/play.png')
+    btnPlay = Button(frameMiddle, text="Play", command=lambda: music_play(myresult))
+    btnPlay.grid(row=0, column=0, padx=10)
+
+    imageStop = PhotoImage(file=r'images/stop.png')
+    btnStop = Button(frameMiddle, text="Stop", command=music_stop)
+    btnStop.grid(row=0, column=1, padx=10)
+
+    imagePause = PhotoImage(file=r'images/pause.png')
+    btnPause = Button(frameMiddle, text="Pause", command=music_pause)
+    btnPause.grid(row=0, column=2, padx=10)
+
+    frameBottom = Frame(frameRight)
+    frameBottom.pack()
+
+    imageRewind = PhotoImage(file=r'images/rewind.png')
+    btnRewind = Button(frameBottom, text="Rewind", command=music_play)
+    btnRewind.grid(row=0, column=0)
+
+    select_button = Button(frameBottom, text="Select", command=lambda: select_music(root))
+    select_button.grid(row=5, column=1)
+
+    global btnMute
+    imageMute = PhotoImage(file=r'images/mute.png')
+    imageVolume = PhotoImage(file=r'images/volume.png')
+    btnMute = Button(frameBottom, text="Volume", command=music_mute)
+    btnMute.grid(row=0, column=1)
+
+    scaleVolume = Scale(frameBottom, from_=0, to=100, orient=HORIZONTAL, command=music_volume)
+    scaleVolume.set(80)
+    scaleVolume.grid(row=0, column=2, padx=30, pady=15)
+
+
+
+    root.protocol("WM_DELETE_WINDOW",lambda: on_exit(root))
+    root.mainloop()
+
+
 
 
 
@@ -65,39 +221,15 @@ def show_details(filepath):
     threadCounter.start()
 
 
-def add_to_list_box(filename):
-    filename = os.path.basename(filename)
-    listIndex = 0
-
-    playlistBox.insert(listIndex, filename)
-    playlist.insert(listIndex, textFilePath)
-    listIndex += 1
 
 
-def browse_file():
-    global textFilePath
-    textFilePath = filedialog.askopenfilename()
-    add_to_list_box(textFilePath)
 
-
-subMenu = Menu(menuBar, tearoff=0)
-menuBar.add_cascade(label="File", menu=subMenu)
-subMenu.add_command(label="Open", command=browse_file)
-subMenu.add_command(label="Exit", command=root.destroy)
 
 
 def submenu_about():
-    tkinter.messagebox.showinfo("About", "Developed by Abubakar Sheikh")
+    tkinter.messagebox.showinfo("About", "Developed by Saood Sarwar")
 
 
-subMenu = Menu(menuBar, tearoff=0)
-menuBar.add_cascade(label="Help", menu=subMenu)
-subMenu.add_command(label="About", command=submenu_about)
-
-mixer.init()
-
-frameLeft = Frame(root)
-frameLeft.pack(side=LEFT, padx=30)
 
 
 # def onselect(evt):
@@ -109,33 +241,10 @@ frameLeft.pack(side=LEFT, padx=30)
 #     mixer.music.load(music_play_path)
 
 
-playlistBox = Listbox(frameLeft, relief=RAISED)
-# playlistBox.bind('<<ListboxSelect>>', onselect)
-playlistBox.pack()
-
-btnAdd = Button(frameLeft, text="+ Add", command=browse_file)
-btnAdd.pack(side=LEFT)
-
-btnDel = Button(frameLeft, text="- Del")
-btnDel.pack(side=LEFT)
-
-frameRight = Frame(root)
-frameRight.pack()
-
-frameTop = Frame(frameRight)
-frameTop.pack()
-
-textWelcome = Label(frameTop, text="Welcome to EBMP")
-textWelcome.pack(pady=5)
-
-textMusicLength = Label(frameTop, text="Total Length: --:--")
-textMusicLength.pack()
-
-textMusicCurrent = Label(frameTop, text="Current Time: --:--", relief=GROOVE)
-textMusicCurrent.pack(pady=5)
 
 
-def music_play():
+
+def music_play(myresult):
     global paused
 
     if paused:
@@ -144,8 +253,7 @@ def music_play():
         paused = FALSE
     else:
         try:
-            music_stop()
-
+            #music_stop()
             music_selected = playlistBox.curselection()
             music_selected = int(music_selected[0])
             music_play_path = playlist[music_selected]
@@ -181,6 +289,7 @@ muted = FALSE
 
 def music_mute():
     global muted
+    global btnMute
 
     if muted:
         mixer.music.set_volume(0.8)
@@ -199,42 +308,14 @@ def music_volume(val):
     mixer.music.set_volume(volume)
 
 
-frameMiddle = Frame(frameRight)
-frameMiddle.pack(padx=30, pady=30)
-
-imagePlay = PhotoImage(file=r'images/play.png')
-btnPlay = Button(frameMiddle, image=imagePlay, command=music_play)
-btnPlay.grid(row=0, column=0, padx=10)
-
-imageStop = PhotoImage(file=r'images/stop.png')
-btnStop = Button(frameMiddle, image=imageStop, command=music_stop)
-btnStop.grid(row=0, column=1, padx=10)
-
-imagePause = PhotoImage(file=r'images/pause.png')
-btnPause = Button(frameMiddle, image=imagePause, command=music_pause)
-btnPause.grid(row=0, column=2, padx=10)
-
-frameBottom = Frame(frameRight)
-frameBottom.pack()
-
-imageRewind = PhotoImage(file=r'images/rewind.png')
-btnRewind = Button(frameBottom, image=imageRewind, command=music_play)
-btnRewind.grid(row=0, column=0)
-
-imageMute = PhotoImage(file=r'images/mute.png')
-imageVolume = PhotoImage(file=r'images/volume.png')
-btnMute = Button(frameBottom, image=imageVolume, command=music_mute)
-btnMute.grid(row=0, column=1)
-
-scaleVolume = Scale(frameBottom, from_=0, to=100, orient=HORIZONTAL, command=music_volume)
-scaleVolume.set(80)
-scaleVolume.grid(row=0, column=2, padx=30, pady=15)
 
 
-def on_exit():
+
+def on_exit(root):
     music_stop()
     root.destroy()
 
 
-root.protocol("WM_DELETE_WINDOW", on_exit)
-root.mainloop()
+def call(mood):
+    main(mood)
+call("Happy")

@@ -10,7 +10,7 @@ import mysql.connector
 import mysql
 import DataBaseConnect
 from tkinter.messagebox import *
-
+import random
 global textMusicCurrent
 global textMusicLength
 playlist = []
@@ -28,18 +28,6 @@ global myresult
 
 
 
-def database(mood):
-    global myresult
-    if mood=="Happy":
-        type=1
-        mydb,mycursor=DataBaseConnect.database()
-
-    sql = ("""SELECT SongUrl,SongId,SongName FROM song WHERE SongTypeId='%s' """ % (type))
-    mycursor.execute(sql)
-    myresult = mycursor.fetchall()
-    return myresult
-
-
 
 def select_music(root):
     global music_selected
@@ -48,12 +36,16 @@ def select_music(root):
     music_selected = int(music_selected[0])
     music_play_path = playlist[music_selected]
 
-    path=music_play_path[0]
-    path2=path+".mp3"
+    mydb, mycursor = DataBaseConnect.database()
+    sql = ("""SELECT SongUrl FROM song WHERE SongName='%s' """ % (music_play_path))
+    mycursor.execute(sql)
+    url = mycursor.fetchall()
+    path2 = url[0][0] + ".mp3"
+
     mixer.music.load(path2)
     time.sleep(1)
     mixer.music.play()
-    statusBar['text'] = "Playing - " + os.path.basename(path)
+    statusBar['text'] = "Playing - " + os.path.basename(url[0][0])
     show_details(path2)
 
 def user_ratingChange():
@@ -126,10 +118,38 @@ global value1
 def report_change(name,value):
     global value1
     value1=value
+
+
+def fill(myresult2,playlistBox,playlist):
+
+    k = 0
+
+    length = len(myresult2)
+    while k<length:
+        playlistBox.insert(k, myresult2[k][1])
+        playlist.insert(k, myresult2[k][1])
+        k=k+1
+    return playlistBox,playlist
+
 global var
 def main(mood):
-    myresult=database(mood)
+    import MusicSelection
 
+    myresult=MusicSelection.database(mood)
+    print(myresult)
+    mydb, mycursor = DataBaseConnect.database()
+
+    count=0
+    myresult2=[]
+    for i in myresult:
+        sql = ("""SELECT SongUrl,SongName FROM Song WHERE SongId='%s' """ % (myresult[count][0]))
+        mycursor.execute(sql)
+        myresult1 = mycursor.fetchall()
+        count=count+1
+        myresult2.append(myresult1[0])
+
+    print(myresult1)
+    print(myresult2)
     root = Tk()
     root.geometry("1000x700")
     root.title("EBMP")
@@ -167,19 +187,14 @@ def main(mood):
     global playlistBox
     playlistBox = Listbox(frameLeft, relief=RAISED,width=60)
     playlistBox.pack()
-    k=0
-    length = len(myresult)
-    print(myresult)
-    while k<length:
-        playlistBox.insert(k, myresult[k])
-        playlist.insert(k, myresult[k])
+    button = Button(frameLeft, text="Refresh")
+    button.pack(anchor=CENTER)
 
-        k=k+1
+    #k=0
+    #length = len(myresult)
 
 
-
-    btnDel = Button(frameLeft, text="- Del")
-    btnDel.pack(side=LEFT)
+    fill(myresult2,playlistBox,playlist)
 
     frameRight = Frame(root)
     frameRight.pack()
@@ -235,7 +250,7 @@ def main(mood):
 
 
 
-    root.protocol("WM_DELETE_WINDOW", on_exit)
+    root.protocol("WM_DELETE_WINDOW",lambda: on_exit(root))
     root.mainloop()
 
 
@@ -372,9 +387,9 @@ def music_volume(val):
 
 
 
-def on_exit():
+def on_exit(root):
     music_stop()
+    root.destroy()
 
 def call(mood):
     main(mood)
-#call("Happy")
