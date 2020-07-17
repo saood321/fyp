@@ -3,22 +3,23 @@ import math
 import xlwt
 book = xlwt.Workbook()
 sheet1 = book.add_sheet('Sheet1')
-df = pd.read_excel("random1.xls", sheet_name=0)
+df = pd.read_excel("surprise1.xls", sheet_name=0)
 
 def createList(r1, r2):
     return list(range(r1, r2))
-r1, r2 = 1,35
+r1, r2 = 1,125
 mylist1=createList(r1, r2)
 
 k=0
 col=0
 for i in mylist1:
+    print(col)
     header1 = 'SUX{}'.format(i)
     header2 = 'SUY{}'.format(i)
     list1 = list(df[header1])
     list2 = list(df[header2])
-    sheet1.write(0, i-1, 'SU{}'.format(i))
-    name = "random3.xls"
+    sheet1.write(0, i-1, "Surprise")
+    name = "surpriseDistance1.xls"
     book.save(name)
 
     def createList(r1, r2):
@@ -43,7 +44,7 @@ for i in mylist1:
                 sheet1.write(k,col, distance)
                 k = k + 1
     col=col+1
-    name = "random3.xls"
+    name = "surpriseDistance1.xls"
     book.save(name)
 
 print('End')

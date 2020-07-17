@@ -1,8 +1,8 @@
 import mysql.connector
-import mysql
+import pymysql
 
 def database():
-    mydb = mysql.connector.connect(
+    mydb = pymysql.connect(
         host="localhost",
         user="",
         passwd="",

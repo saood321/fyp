@@ -6,11 +6,8 @@ import os
 from mutagen.mp3 import MP3
 import time
 import threading
-import mysql.connector
-import mysql
-import DataBaseConnect
+
 from tkinter.messagebox import *
-import random
 global textMusicCurrent
 global textMusicLength
 playlist = []
@@ -23,96 +20,133 @@ global imageMute
 global path
 global music_selected
 global myresult
-
-
-
-
-
-
-def select_music(root):
+import actual.DataBaseConnect
+mydb, mycursor = actual.DataBaseConnect.database()
+global path2
+import mysql.connector
+def select_music():
     global music_selected
     global path
-    music_selected = playlistBox.curselection()
-    music_selected = int(music_selected[0])
-    music_play_path = playlist[music_selected]
+    global paused
+    global path2
 
-    mydb, mycursor = DataBaseConnect.database()
-    sql = ("""SELECT SongUrl FROM song WHERE SongName='%s' """ % (music_play_path))
-    mycursor.execute(sql)
-    url = mycursor.fetchall()
-    path2 = url[0][0] + ".mp3"
+    if paused:
+        mixer.music.unpause()
+        statusBar['text'] = "Playing - " + os.path.basename(path2)
+        paused = FALSE
+    else:
+        try:
+            #music_stop()
+            music_selected = playlistBox.curselection()
+            music_selected = int(music_selected[0])
+            music_play_path = playlist[music_selected]
 
-    mixer.music.load(path2)
-    time.sleep(1)
-    mixer.music.play()
-    statusBar['text'] = "Playing - " + os.path.basename(url[0][0])
-    show_details(path2)
-
-def user_ratingChange():
-    print(index)
-    print("new rating in user",value1)
-    sys.path.append(r"C:\Users\M.Saood Sarwar\PycharmProjects\fyp\EBMPgui")
-
-    from Signin import Geek
-
-    p=Geek()
-    val = p.getVal()
-    print(val)
-    mydb,mycursor = DataBaseConnect.database()
-
-    sql = "INSERT INTO History (UserID,SongId,Rating) VALUES (%s, %s,%s)"
-    val = (val, index, value1)
-    mycursor.execute(sql, val)
-    mydb.commit()
-    var = mycursor.rowcount
-    if var==1:
-        print("Succss")
+            mydb, mycursor = actual.DataBaseConnect.database()
+            sql = ("""SELECT SongUrl FROM song WHERE SongName='%s' """ % (music_play_path))
+            mycursor.execute(sql)
+            url = mycursor.fetchall()
+            path2 = url[0][0] + ".mp3"
+            mixer.music.load(path2)
+            time.sleep(1)
+            mixer.music.play()
+            statusBar['text'] = "Playing - " + os.path.basename(url[0][0])
+            show_details(path2)
+        except :
+            showerror("First Click on song")
 
 
 global index
-def ratingChange():
-    global myresult
+def ratingChange(myresult,oldrating1):
     global index
-
-
+    music_selected = playlistBox.curselection()
+    music_selected = int(music_selected[0])
+    index = myresult[music_selected]
     try:
-        print(type(value1))
-        val=float(value1)
-        print("new rating in song", val)
-        index=myresult[music_selected][1]
-        mydb,mycursor=DataBaseConnect.database()
+        length = len(oldrating1)
 
+        mydb, mycursor = DataBaseConnect.database()
 
-        sql = ("""SELECT NoOfRating FROM Song WHERE SongId='%s' """ % (index))
+        sql = ("""SELECT NoOfRating FROM Song WHERE SongId='%s' """ % (index[0]))
         mycursor.execute(sql)
         no_rating = mycursor.fetchall()
+        no_rating = no_rating[0][0]
 
-        sql = ("""SELECT TotalRating FROM Song WHERE SongId='%s' """ % (index))
+        sql = ("""SELECT TotalRating FROM Song WHERE SongId='%s' """ % (index[0]))
         mycursor.execute(sql)
         total_rating = mycursor.fetchall()
+        total_rating = total_rating[0][0]
 
-        total_rating=total_rating[0][0]
-        no_rating = no_rating[0][0]
-        rating_update=((total_rating*no_rating)+val)/(no_rating+1)
-        rating_update=round(rating_update,2)
+        val = float(value1)
 
-        print(rating_update)
-        mycursor.execute("""UPDATE Song SET TotalRating='%s' WHERE SongId=%s""",(rating_update, index))
+        if(length==0):
+            rating_update=((total_rating*no_rating)+val)/(no_rating+1)
+            rating_update=round(rating_update,2)
+
+            new_no_rating=no_rating+1
+
+        else:
+            new_no_rating=no_rating
+            oldrating=oldrating1[0][1]
+            rating_update = ((total_rating * no_rating) + (val-oldrating)) / (no_rating)
+            rating_update = round(rating_update, 2)
+
+        mycursor.execute("""UPDATE Song SET TotalRating='%s' WHERE SongId=%s""", (rating_update, index[0]))
         mydb.commit()
         updated = mycursor.rowcount
 
-        new_no_rating=no_rating+1
-        mycursor.execute("""UPDATE Song SET NoOfRating='%s' WHERE SongId=%s""", (new_no_rating, index))
+        mycursor.execute("""UPDATE Song SET NoOfRating='%s' WHERE SongId=%s""", (new_no_rating, index[0]))
         mydb.commit()
         updated1 = mycursor.rowcount
-        if(updated==1 and updated1==1):
-            showinfo("EBMP","Thanks")
 
+        if (updated == 1 and updated1 == 1):
+            showinfo("EBMP", "updated")
     except:
-        showerror("EBMP", "Error")
-def two():
-    ratingChange()
-    user_ratingChange()
+        showerror("EBMP","Failed")
+global val
+def getname():
+    sys.path.append(r"C:\Users\M.Saood Sarwar\PycharmProjects\fyp\EBMPgui")
+    from Signin import Geek
+    p = Geek()
+    val = p.getVal()
+    return val
+def user_ratingChange(myresult,oldrating1):
+    global val
+    global index
+
+    length = len(oldrating1)
+    val = getname()
+    mydb, mycursor = DataBaseConnect.database()
+
+    print(length)
+    if(length==0):
+
+        sql = "INSERT INTO History (UserID,SongId,Rating) VALUES (%s, %s,%s)"
+        val1 = (val, index[0], value1)
+        mycursor.execute(sql, val1)
+        mydb.commit()
+    else:
+
+        val = float(value1)
+        mycursor.execute("""UPDATE history SET Rating='%s' WHERE SongId=%s""", (val, index[0]))
+        mydb.commit()
+        #updated = mycursor.rowcount
+
+
+def two(myresult):
+    mydb, mycursor = DataBaseConnect.database()
+    music_selected = playlistBox.curselection()
+    music_selected = int(music_selected[0])
+    index = myresult[music_selected]
+    val=getname()
+
+    sql = ("""SELECT SongId,Rating FROM history WHERE UserId='%s' and SongId='%s' """ % (val,index[0]))
+    mycursor.execute(sql)
+    url = mycursor.fetchall()
+
+
+    ratingChange(myresult,url)
+    user_ratingChange(myresult,url)
+
 
 global value1
 def report_change(name,value):
@@ -121,7 +155,7 @@ def report_change(name,value):
 
 
 def fill(myresult2,playlistBox,playlist):
-
+    print(myresult2)
     k = 0
 
     length = len(myresult2)
@@ -131,50 +165,78 @@ def fill(myresult2,playlistBox,playlist):
         k=k+1
     return playlistBox,playlist
 
-global var
-def main(mood):
+def refresh_playlist(mood):
     import MusicSelection
+    import CheckSongType
+    playlistBox.delete(0,'end')
+    songtype1 = CheckSongType.songtype(mood)
+    songtype = songtype1[0][0]
+    musiclist=MusicSelection.randomsong(songtype,10)
+    musiclist1=idToSongName(musiclist)
+    fill(musiclist1,playlistBox,playlist)
 
-    myresult=MusicSelection.database(mood)
-    print(myresult)
-    mydb, mycursor = DataBaseConnect.database()
-
+def idToSongName(myresult):
+    myresult2 = []
     count=0
-    myresult2=[]
     for i in myresult:
         sql = ("""SELECT SongUrl,SongName FROM Song WHERE SongId='%s' """ % (myresult[count][0]))
         mycursor.execute(sql)
         myresult1 = mycursor.fetchall()
-        count=count+1
+        count = count + 1
         myresult2.append(myresult1[0])
+    return myresult2
 
-    print(myresult1)
-    print(myresult2)
-    root = Tk()
-    root.geometry("1000x700")
-    root.title("EBMP")
-    root.iconbitmap(r'images/melody.ico')
+def main(mood,calltype):
+    from PIL import ImageTk
+    #import EBMPgui.WindowInitializing
+    #win = EBMPgui.WindowInitializing.window()
+    win=Toplevel()
+
+    win.bg_music = ImageTk.PhotoImage(file=r"C:\Users\M.Saood Sarwar\PycharmProjects\fyp\images\music.png")
+
+    label=Label(win, image=win.bg_music)
+    label.image = win.bg_music
+    label.pack()
+    global playlistBox
+    playlistBox = Listbox(win, relief=RAISED, width=38, height=12)
+    playlistBox.place(x=200, y=190)
+    val=getname()
+
+    if calltype=="History":
+        import actual.MusicSelection
+
+        myresult=actual.MusicSelection.historysongs(None,val,10)
+        myresult2 = idToSongName(myresult)
+
+        fill(myresult2, playlistBox, playlist)
+    else:
+        import MusicSelection
+        myresult=MusicSelection.database(mood,val)
+        myresult2 = idToSongName(myresult)
+        fill(myresult2, playlistBox, playlist)
+        Label(win, text=mood, font=("times new roman", 25, "bold")).place(x=510, y=140)
+
+
+
+    #win.iconbitmap(r'images/melody.ico')
     global var
     var = DoubleVar()
-    scale = Scale(root,command=lambda value, name=var: report_change(name, value),variable=var, orient=HORIZONTAL, sliderlength=40, width=20, length=200, from_=0, to=10)
-    scale.pack(anchor=CENTER)
-    button = Button(root, text="Rate Song",command=two)
-    button.pack(anchor=CENTER)
-    label = Label(root)
-    label.pack()
+    scale = Scale(win,command=lambda value, name=var: report_change(name, value),variable=var, orient=HORIZONTAL, sliderlength=40, width=20, length=200, from_=0, to=10)
+    scale.place(x=710,y=270)
+    button = Button(win, text="Rate Song",command=lambda:two(myresult))
+    button.place(x=760,y=330)
+    #label = Label(win)
+    #label.place()
 
 
-    menuBar = Menu(root)
-    root.config(menu=menuBar)
+    menuBar = Menu(win)
+    win.config(menu=menuBar)
 
-    global statusBar
-    statusBar = Label(root, text="Welcome to EBMP", relief=SUNKEN, anchor=W)
-    statusBar.pack(side=BOTTOM, fill=X)
 
     subMenu = Menu(menuBar, tearoff=0)
     menuBar.add_cascade(label="File", menu=subMenu)
 
-    subMenu.add_command(label="Exit", command=root.destroy)
+    subMenu.add_command(label="Exit", command=win.destroy)
 
     subMenu = Menu(menuBar, tearoff=0)
     menuBar.add_cascade(label="Help", menu=subMenu)
@@ -182,76 +244,75 @@ def main(mood):
 
     mixer.init()
 
-    frameLeft = Frame(root)
-    frameLeft.pack(side=LEFT, padx=10,pady=80)
-    global playlistBox
-    playlistBox = Listbox(frameLeft, relief=RAISED,width=60)
-    playlistBox.pack()
-    button = Button(frameLeft, text="Refresh")
-    button.pack(anchor=CENTER)
+
+
+
+    win.refresh_icon = ImageTk.PhotoImage(file=r"C:\Users\M.Saood Sarwar\PycharmProjects\fyp\images\refresh.png")
+    button = Button(win, image=win.refresh_icon,command=lambda: refresh_playlist(mood))
+    button.place(x=220, y=400)
 
     #k=0
     #length = len(myresult)
 
 
-    fill(myresult2,playlistBox,playlist)
 
-    frameRight = Frame(root)
-    frameRight.pack()
 
-    frameTop = Frame(frameRight)
-    frameTop.pack()
 
-    textWelcome = Label(frameTop, text="Welcome to EBMP")
-    textWelcome.pack(pady=5)
+
+    textWelcome = Label(win, text="Welcome to EBMP")
+    textWelcome.place(x=470,y=200)
 
     global textMusicLength
-    textMusicLength = Label(frameTop, text="Total Length: --:--")
-    textMusicLength.pack()
+    textMusicLength = Label(win, text="Total Length: --:--")
+    textMusicLength.place(x=470,y=250)
 
     global textMusicCurrent
-    textMusicCurrent = Label(frameTop, text="Current Time: --:--", relief=GROOVE)
-    textMusicCurrent.pack(pady=5)
+    textMusicCurrent = Label(win, text="Current Time: --:--", relief=GROOVE)
+    textMusicCurrent.place(x=470,y=300)
+    global statusBar
+    statusBar = Label(win, text="Status", relief=SUNKEN, anchor=W)
+    statusBar.place(x=470,y=330)
 
-    frameMiddle = Frame(frameRight)
-    frameMiddle.pack(padx=30, pady=30)
 
-    imagePlay = PhotoImage(file=r'images/play.png')
-    btnPlay = Button(frameMiddle, text="Play", command=lambda: music_play(myresult))
-    btnPlay.grid(row=0, column=0, padx=10)
 
-    imageStop = PhotoImage(file=r'images/stop.png')
-    btnStop = Button(frameMiddle, text="Stop", command=music_stop)
-    btnStop.grid(row=0, column=1, padx=10)
 
-    imagePause = PhotoImage(file=r'images/pause.png')
-    btnPause = Button(frameMiddle, text="Pause", command=music_pause)
-    btnPause.grid(row=0, column=2, padx=10)
+    win.playcircle_icon = ImageTk.PhotoImage(file=r"C:\Users\M.Saood Sarwar\PycharmProjects\fyp\images\playcircle.png")
+    #btnPlay = Button(win, image=win.playcircle_icon, command=lambda: music_play(myresult))
+    #btnPlay.place(x=545, y=400)
 
-    frameBottom = Frame(frameRight)
-    frameBottom.pack()
+    win.stop_icon = ImageTk.PhotoImage(file=r"C:\Users\M.Saood Sarwar\PycharmProjects\fyp\images\stop.png")
+    btnStop = Button(win, image=win.stop_icon, command=music_stop)
+    btnStop.place(x=630, y=400)
 
-    imageRewind = PhotoImage(file=r'images/rewind.png')
-    btnRewind = Button(frameBottom, text="Rewind", command=music_play)
-    btnRewind.grid(row=0, column=0)
+    win.pause_icon = ImageTk.PhotoImage(file=r"C:\Users\M.Saood Sarwar\PycharmProjects\fyp\images\pause.png")
+    btnPause = Button(win, image=win.pause_icon, command=music_pause)
+    btnPause.place(x=460,y=400)
 
-    select_button = Button(frameBottom, text="Select", command=lambda: select_music(root))
-    select_button.grid(row=5, column=1)
+
+
+    win.rewind_icon = ImageTk.PhotoImage(file=r"C:\Users\M.Saood Sarwar\PycharmProjects\fyp\images\rewind.png")
+    btnRewind = Button(win, image=win.rewind_icon, command=select_music)
+    btnRewind.place(x=500, y=470)
+
+
+
+    select_button = Button(win,image=win.playcircle_icon, command= select_music)
+    select_button.place(x=545, y=400)
 
     global btnMute
-    imageMute = PhotoImage(file=r'images/mute.png')
-    imageVolume = PhotoImage(file=r'images/volume.png')
-    btnMute = Button(frameBottom, text="Volume", command=music_mute)
-    btnMute.grid(row=0, column=1)
+    win.mute_icon = ImageTk.PhotoImage(file=r"C:\Users\M.Saood Sarwar\PycharmProjects\fyp\images\volumeoff.png")
+    win.volume_icon = ImageTk.PhotoImage(file=r"C:\Users\M.Saood Sarwar\PycharmProjects\fyp\images\volumeup.png")
+    btnMute = Button(win, image=win.volume_icon, command=music_mute)
+    btnMute.place(x=590, y=470)
 
-    scaleVolume = Scale(frameBottom, from_=0, to=100, orient=HORIZONTAL, command=music_volume)
+    scaleVolume = Scale(win, from_=0, to=100, orient=HORIZONTAL, command=music_volume)
     scaleVolume.set(80)
-    scaleVolume.grid(row=0, column=2, padx=30, pady=15)
+    scaleVolume.place(x=650, y=470)
 
 
 
-    root.protocol("WM_DELETE_WINDOW",lambda: on_exit(root))
-    root.mainloop()
+    win.protocol("WM_DELETE_WINDOW",lambda: on_exit(win))
+    win.mainloop()
 
 
 
@@ -387,9 +448,9 @@ def music_volume(val):
 
 
 
-def on_exit(root):
+def on_exit(win):
     music_stop()
-    root.destroy()
+    win.destroy()
 
-def call(mood):
-    main(mood)
+def call(mood,calltype):
+    main(mood,calltype)

@@ -2,62 +2,92 @@ from tkinter import *
 import Signin
 import Upgrade
 import WindowInitializing
-import pygame
+import mysql
+import mysql.connector
 import sys
-pygame.init()
-pygame.mixer.music.load("DusBahane.mp3")
-val=0
+
 
 def logout(win):
     win.destroy()
     Signin.call()
 
 
-def play1():
-    pygame.mixer.music.play()
-
-def stop1():
-    pygame.mixer.music.stop()
 
 
-def music_forward(event=None):
-    print(val)
+def history(name):
 
-def history():
-    import MusicPlayer
-    MusicPlayer.call("Happy")
+    import actual.MusicPlayer
+    actual.MusicPlayer.call("Happy","History")
 
 
+def write_file(data, filename):
+    # Convert binary data to proper format and write it on Hard Disk
+    with open(filename, 'wb') as file:
+        file.write(data)
+
+
+def readBLOB(self,name):
+    print("Reading BLOB data from python_employee table")
+    import actual.DataBaseConnect
+    try:
+        connection,cursor = actual.DataBaseConnect.database()
+
+        sql_fetch_blob_query = """SELECT Image from user where Username = %s"""
+
+        cursor.execute(sql_fetch_blob_query, (name,))
+        record = cursor.fetchall()
+        print(record[0][0])
+        if record[0][0] !=None:
+
+
+            for row in record:
+
+                image = row[0]
+            print(type(image))
+            from PIL import Image
+            import io
+            from PIL import Image, ImageTk
+            file_like2 = io.BytesIO(image)
+
+            img1 = Image.open(file_like2)
+
+            img1 = img1.resize((200, 200), Image.ANTIALIAS)
+            #photoimg = ImageTk.PhotoImage(img1)
+            Image = ImageTk.PhotoImage(img1)  # <---
+            print(Image)
+            return Image
+        else:
+            print("Failed")
+
+    except mysql.connector.Error as error:
+        print("Failed to read BLOB data from MySQL table {}".format(error))
+
+def getEmail(name):
+    import actual.DataBaseConnect
+    mydb, mycursor = actual.DataBaseConnect.database()
+    sql = ("""SELECT Email FROM user WHERE Username='%s'""" % name)
+    mycursor.execute(sql)
+    myresult = mycursor.fetchall()
+    return myresult[0][0]
 def homepage1(name):
     root = WindowInitializing.window()
-    title = Label(root, text=name, font=("times new roman", 40, "bold"), bg="black", fg="white", bd=10,
-                  relief=GROOVE)
-    title.place(x=0, y=0, relwidth=1)
+    Label(root, image=root.bg_icon_main).pack()
+    Image=readBLOB(root,name)
+    if Image!=None:
+        ImageLabel = Label(root, image=Image, width=200, height=200)
+        ImageLabel.image = Image
+        ImageLabel.place(x=200, y=90)
+    title = Label(root, text=name,width=22, font=("times new roman", 12), bg="#C1B1B6", fg="white")
+    title.place(x=202, y=295)
+    email=getEmail(name)
+    title = Label(root, text=email, width=22, font=("times new roman", 12), bg="#C1B1B6", fg="white")
+    title.place(x=202, y=320)
 
-    upgrade_frame = Frame(root, bg="white")
-    upgrade_frame.place(x=100, y=130)
-    btn_upgradeProfile = Button(upgrade_frame,width=15,height=2,font=("times new roman", 20, "bold"), text="Upgrade Profile", command=lambda :upgradedata(root,name), bg="black", fg="white").grid(row=0, column=0)
-    btn_history = Button(upgrade_frame,width=15,height=2,font=("times new roman", 20, "bold"),command=history, text="History",  bg="black", fg="white").grid(row=0, column=2)
-    btn_logout = Button(upgrade_frame,width=15,height=2,font=("times new roman", 20, "bold"), text="Logout" ,command=lambda :logout(root),  bg="black", fg="white").grid(row=0, column=3)
-
-    login_frame = Frame(root, bg="white")
-    login_frame.place(x=1100, y=130)
-    btn_camera = Button(login_frame, text="camera",width=200,height=70, command=camera, image=root.camera, compound=LEFT,
-                       font=("times new roman", 20, "bold"), bg="black", fg="white").grid(row=0, column=0)
-    btn_musicPlay = Button(login_frame, text="music play", width=200, height=70, command=play1, image=root.camera, compound=LEFT,
-                        font=("times new roman", 20, "bold"), bg="black", fg="white").grid(row=1, column=0)
-    btn_musicStop = Button(login_frame, text="music stop", width=200, height=70, command=stop1, image=root.camera,
-                       compound=LEFT,
-                       font=("times new roman", 20, "bold"), bg="black", fg="white").grid(row=2, column=0)
-
-    music_frame = Frame(root, bg="white")
-    music_frame.place(x=100, y=500)
-    music_scale = Scale(root, from_=0, to=400, orient=HORIZONTAL, length=300)
-    music_scale.bind("<ButtonRelease-1>",music_forward)
-    music_scale.place(x=0,y=0)
-    val1 = music_scale.get()
-    print(val1)
-
+    btn_history = Button(root,command=lambda: history(name),image=root.history_icon).place(x=200,y=542)
+    btn_logout = Button(root,image=root.logout_icon ,
+                        command=lambda: logout(root)).place(x=885,y=542)
+    btn_camera = Button(root, text="camera",image=root.playmain_icon, command=camera).place(x=510,y=360)
+    btn_upgradeProfile = Button(root, image=root.setting_icon, command=lambda: upgradedata(root, name)).place(x=885,y=90)
 
     root.mainloop()
 

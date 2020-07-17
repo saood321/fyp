@@ -5,7 +5,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 import pickle
 def fun():
-    data=pd.read_csv('train.csv')
+    data=pd.read_csv('distances.csv')
     X=data.drop(['Class'],axis=1)
     y=data['Class']
     X_train,X_test,y_train, y_test=train_test_split(X,y,test_size=0.30)

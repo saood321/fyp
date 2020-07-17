@@ -5,13 +5,16 @@ import xlwt
 from matplotlib import style
 style.use("ggplot")
 
-directory = 'newDataset\Surprise'
+directory = r'C:\Users\M.Saood Sarwar\PycharmProjects\fyp\Dataset\CK+48\surprise1'
 book = xlwt.Workbook()
 sheet1 = book.add_sheet('sheet1')
 j=0
 k=0
+xlist = []
+ylist = []
+count = 1
 for filename in os.listdir(directory):
-    if filename.endswith(".jpg") or filename.endswith(".py"):
+    if filename.endswith(".png") or filename.endswith(".py"):
         k = k + 1
         images=os.path.join(directory, filename)
         image = cv2.imread(images)
@@ -44,22 +47,22 @@ for filename in os.listdir(directory):
                 return landmarks
 
 
-        xlist=[]
-        ylist=[]
+
         xlist,ylist=get_landmarks(image,k)
 
         for i, e in enumerate(xlist):
             sheet1.write(i, j, e)
-        name = "random1.xls"
+        name = "surprise1.xls"
         book.save(name)
         j = j + 1
         for i, e in enumerate(ylist):
             sheet1.write(i, j, e)
 
-        name = "random1.xls"
+        name = "surprise1.xls"
         book.save(name)
         j = j + 1
-        print("Wait...")
+        print("Wait...",count)
+        count=count+1
 
 
     else:

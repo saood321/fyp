@@ -2,10 +2,10 @@
 import cv2
 import dlib
 
-def get_landmarks():
+def get_landmarks(resized):
     detector = dlib.get_frontal_face_detector()  # Face detector
     predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
-    img =cv2.imread('resizeface.jpg')
+    img =resized
 
     xlist = ['T1']
     ylist = ['T2']

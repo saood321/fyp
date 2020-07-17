@@ -2,10 +2,10 @@
 import xlwt
 from getLandmarks import *
 from distanceCalculation import *
-def landmarks():
+def landmarks(resized):
     book = xlwt.Workbook()
     sheet1 = book.add_sheet('sheet1')
-    xlist, ylist = get_landmarks()
+    xlist, ylist = get_landmarks(resized)
 
     #saving x-axies points in excel from xlist
     for i, e in enumerate(xlist):

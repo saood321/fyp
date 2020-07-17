@@ -5,13 +5,13 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 import pickle
 def fun():
-    data=pd.read_csv('train.csv')
+    data=pd.read_csv('distances.csv')
     X=data.drop(['Class'],axis=1)
     y=data['Class']
 
     classifier=svm.SVC(kernel='linear')
     model=classifier.fit(X,y)
-    filename = 'final_model.sav'
+    filename = 'myModel.sav'
     pickle.dump(model, open(filename, 'wb'))
 
 
